@@ -42,6 +42,11 @@ def generate_affidavit(
     Returns:
         BytesIO object containing the filled PDF
     """
+    print(f"[pdf_generator] generate_affidavit called: vendor={vendor!r}, price={price}, date={date!r}, cardholder={cardholder_name!r}")
+    print(f"[pdf_generator] TEMPLATE_PATH={TEMPLATE_PATH}, exists={os.path.exists(TEMPLATE_PATH)}")
+    print(f"[pdf_generator] FONT_PATH={FONT_PATH}, exists={os.path.exists(FONT_PATH)}")
+    print(f"[pdf_generator] SIGNATURE_FONT={SIGNATURE_FONT}")
+
     # Read template PDF
     template_pdf = PdfReader(TEMPLATE_PATH)
     output_pdf = PdfWriter()
@@ -52,6 +57,7 @@ def generate_affidavit(
 
     # Format data
     parsed_name = parse_cardholder_name(cardholder_name)
+    print(f"[pdf_generator] parsed_name={parsed_name!r}, expense date input={date!r}")
     expense_date = datetime.fromisoformat(date).strftime("%m/%d/%Y")
     receipt_details = f"{vendor}, ${price:.2f}, {expense_date}"
     today_date = datetime.now().strftime("%m/%d/%Y")
@@ -61,15 +67,15 @@ def generate_affidavit(
 
     # Receipt details line (first blank line under "Print receipt detail(s)...")
     c.setFont("Helvetica", 14)
-    c.drawString(40, 260, receipt_details)
+    c.drawString(60, 562, receipt_details)
 
     # Signature line
     c.setFont(SIGNATURE_FONT, 16)
-    c.drawString(40, 145, parsed_name)
+    c.drawString(64, 120, parsed_name)
 
     # Date field (to the right of signature)
     c.setFont("Helvetica", 14)
-    c.drawString(320, 145, today_date)
+    c.drawString(348, 120, today_date)
 
     c.save()
 

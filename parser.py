@@ -130,10 +130,21 @@ def parse_purchases(
 ) -> List[ReportItem]:
 
     wb = export_google_sheet_to_workbook(spreadsheet_link)
+
+    print(f"[parser] Available sheets: {wb.sheetnames}")
     ws = wb["Purchases 2023-2024"]
 
     start_dt = datetime.strptime(start_date, "%m/%d/%Y").date()
+    print(f"[parser] Parsed start_date: {start_dt}")
+    print(f"[parser] Filtering for cardholder: '{cardholder_name}'")
+    print(f"[parser] Total rows in sheet (including header): {ws.max_row}")
+
     report_items: List[ReportItem] = []
+    rows_scanned = 0
+    rows_skipped_no_timestamp = 0
+    rows_skipped_before_date = 0
+    rows_skipped_wrong_cardholder = 0
+    unique_cardholders_seen: set = set()
 
     # Iterate bottom → top (skip header)
     for row in range(ws.max_row, 1, -1):
@@ -141,16 +152,25 @@ def parse_purchases(
         J_pcard = ws[f"J{row}"].value
 
         if not A_timestamp:
+            rows_skipped_no_timestamp += 1
             continue
+
+        rows_scanned += 1
 
         # Timestamp is consistently formatted; extract date portion
         row_date = extract_date(A_timestamp)
 
         # Stop once we're before the start date
         if row_date < start_dt:
+            rows_skipped_before_date += 1
+            print(f"[parser] Row {row}: date {row_date} < start_date {start_dt} — stopping scan")
             break
 
+        if J_pcard:
+            unique_cardholders_seen.add(str(J_pcard))
+
         if J_pcard != cardholder_name:
+            rows_skipped_wrong_cardholder += 1
             continue
 
         D_receipts = ws[f"D{row}"].value
@@ -168,6 +188,7 @@ def parse_purchases(
             str(E_name),
             "Baker College",
             row_date.strftime("%m/%d/%Y"),
+            str(O_vendor),
             str(N_event),
             str(M_items),
             str(F_budget),
@@ -192,5 +213,12 @@ def parse_purchases(
                 needsAffidavit=(P_needs_affidavit == "No")
             )
         )
+
+    print(f"[parser] Rows scanned (with timestamp): {rows_scanned}")
+    print(f"[parser] Rows skipped (no timestamp): {rows_skipped_no_timestamp}")
+    print(f"[parser] Rows skipped (before start_date): {rows_skipped_before_date}")
+    print(f"[parser] Rows skipped (wrong cardholder): {rows_skipped_wrong_cardholder}")
+    print(f"[parser] Unique cardholders seen in range: {unique_cardholders_seen}")
+    print(f"[parser] Items matched for '{cardholder_name}': {len(report_items)}")
 
     return report_items

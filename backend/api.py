@@ -127,8 +127,11 @@ async def generate_affidavit_endpoint(request: AffidavitRequest):
         )
 
     except ValueError as e:
+        import traceback; traceback.print_exc()
         raise HTTPException(status_code=400, detail=f"Invalid date format: {str(e)}")
     except FileNotFoundError as e:
+        import traceback; traceback.print_exc()
         raise HTTPException(status_code=500, detail=f"Template file not found: {str(e)}")
     except Exception as e:
+        import traceback; traceback.print_exc()
         raise HTTPException(status_code=500, detail=f"Affidavit generation failed: {str(e)}")

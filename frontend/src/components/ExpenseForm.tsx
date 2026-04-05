@@ -79,12 +79,12 @@ export default function ExpenseForm({
               required
             >
               <option value="">Select Cardholder</option>
-              <option value="Shammas Ahmed (Treasurer)">Shammas Ahmed (Treasurer)</option>
               <option value="Gavin Firestone (Treasurer)">Gavin Firestone (Treasurer)</option>
-              <option value="Alex Rubio (President)">Alex Rubio (President)</option>
-              <option value="Sami Johnson (IVP)">Sami Johnson (IVP)</option>
-              <option value="Tori Xiao (EVP)">Tori Xiao (EVP)</option>
-              <option value="Eman Fayyaz (CVP)">Eman Fayyaz (CVP)</option>
+              <option value="Gopi Amin (Treasurer)">Gopi Amin (Treasurer)</option>
+              <option value="Sami Johnson (President)">Sami Johnson (President)</option>
+              <option value="Allie Meachum (IVP)">Allie Meachum (IVP)</option>
+              <option value="Jesse Romero (EVP)">Jesse Romero (EVP)</option>
+              <option value="Vero Paz Agreda (CVP)">Vero Paz Agreda (CVP)</option>
             </select>
           </div>
 
