@@ -43,7 +43,7 @@ PROGRAM_MAP = {
     "President": "6656",
     "STRIVE": "6604",
     "RHA": "8604",
-    "BakerShake": "3150",
+    "Baker Shake": "3150",
     "Baker Black Caucus": "6605",
     "O-Week": "6000",
 }
@@ -75,8 +75,20 @@ def export_google_sheet_to_workbook(sheet_url: str):
     return wb
 
 
-def parse_mmddyyyy(date_str: str) -> datetime:
-    return datetime.strptime(date_str, "%m/%d/%Y")
+def parse_date_flexible(date_str: str) -> date:
+    """
+    Accepts M/D/YYYY, M/D/YY, or M/D (assumes current year).
+    """
+    parts = date_str.strip().split("/")
+    month = int(parts[0])
+    day = int(parts[1])
+    if len(parts) == 3 and parts[2]:
+        year = int(parts[2])
+        if year < 100:
+            year += 2000
+    else:
+        year = date.today().year
+    return date(year, month, day)
 
 def parse_receipts(cell_value) -> List[str]:
     if not cell_value:
@@ -96,8 +108,10 @@ def extract_date(cell_value) -> date:
     if isinstance(cell_value, date):
         return cell_value
 
-    # Always ISO format: YYYY-MM-DD[ ...]
-    return datetime.fromisoformat(str(cell_value).split(" ")[0]).date()
+    s = str(cell_value).strip()
+    if "/" in s:
+        return parse_date_flexible(s)
+    return datetime.fromisoformat(s.split(" ")[0]).date()
 
 def parse_price(cell_value) -> float:
     """
@@ -132,9 +146,9 @@ def parse_purchases(
     wb = export_google_sheet_to_workbook(spreadsheet_link)
 
     print(f"[parser] Available sheets: {wb.sheetnames}")
-    ws = wb["Purchases 2023-2024"]
+    ws = wb["Purchases"]
 
-    start_dt = datetime.strptime(start_date, "%m/%d/%Y").date()
+    start_dt = parse_date_flexible(start_date)
     print(f"[parser] Parsed start_date: {start_dt}")
     print(f"[parser] Filtering for cardholder: '{cardholder_name}'")
     print(f"[parser] Total rows in sheet (including header): {ws.max_row}")
@@ -149,7 +163,7 @@ def parse_purchases(
     # Iterate bottom → top (skip header)
     for row in range(ws.max_row, 1, -1):
         A_timestamp = ws[f"A{row}"].value
-        J_pcard = ws[f"J{row}"].value
+        G_pcard = ws[f"G{row}"].value
 
         if not A_timestamp:
             rows_skipped_no_timestamp += 1
@@ -157,48 +171,46 @@ def parse_purchases(
 
         rows_scanned += 1
 
-        # Timestamp is consistently formatted; extract date portion
         row_date = extract_date(A_timestamp)
 
-        # Stop once we're before the start date
         if row_date < start_dt:
             rows_skipped_before_date += 1
             print(f"[parser] Row {row}: date {row_date} < start_date {start_dt} — stopping scan")
             break
 
-        if J_pcard:
-            unique_cardholders_seen.add(str(J_pcard))
+        if G_pcard:
+            unique_cardholders_seen.add(str(G_pcard))
 
-        if J_pcard != cardholder_name:
+        if G_pcard != cardholder_name:
             rows_skipped_wrong_cardholder += 1
             continue
 
-        D_receipts = ws[f"D{row}"].value
-        E_name = ws[f"E{row}"].value
-        F_budget = ws[f"F{row}"].value
-        G_endowment = ws[f"G{row}"].value
-        I_price = ws[f"I{row}"].value
-        L_flyer = ws[f"L{row}"].value
-        M_items = ws[f"M{row}"].value
-        N_event = ws[f"N{row}"].value
-        O_vendor = ws[f"O{row}"].value
-        P_needs_affidavit = ws[f"P{row}"].value
+        B_name = ws[f"B{row}"].value
+        C_items = ws[f"C{row}"].value
+        D_vendor = ws[f"D{row}"].value
+        E_event = ws[f"E{row}"].value
+        F_price = ws[f"F{row}"].value
+        H_budget = ws[f"H{row}"].value
+        I_endowment = ws[f"I{row}"].value
+        J_flyer = ws[f"J{row}"].value
+        K_receipts = ws[f"K{row}"].value
+        L_needs_affidavit = ws[f"L{row}"].value
 
         description_parts = [
-            str(E_name),
+            str(B_name),
             "Baker College",
             row_date.strftime("%m/%d/%Y"),
-            str(O_vendor),
-            str(N_event),
-            str(M_items),
-            str(F_budget),
+            str(D_vendor),
+            str(E_event),
+            str(C_items),
+            str(H_budget),
         ]
 
-        if F_budget == "Other" and G_endowment:
-            description_parts.append(str(G_endowment))
+        if H_budget == "Other" and I_endowment:
+            description_parts.append(str(I_endowment))
 
         description = " | ".join(description_parts)
-        activity = PROGRAM_MAP.get(F_budget, "")
+        activity = PROGRAM_MAP.get(H_budget, "")
 
 
         report_items.append(
@@ -206,11 +218,11 @@ def parse_purchases(
                 description=description,
                 activity=activity,
                 date=row_date,
-                price=parse_price(I_price),
-                vendor=str(O_vendor) if O_vendor else "",
-                receipts=parse_receipts(D_receipts),
-                flyer=str(L_flyer) if L_flyer else "",
-                needsAffidavit=(P_needs_affidavit == "No")
+                price=parse_price(F_price),
+                vendor=str(D_vendor) if D_vendor else "",
+                receipts=parse_receipts(K_receipts),
+                flyer=str(J_flyer) if J_flyer else "",
+                needsAffidavit=(L_needs_affidavit == "No")
             )
         )
 
