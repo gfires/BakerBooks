@@ -1,7 +1,20 @@
 from typing import List, Tuple
-from datetime import datetime
+from datetime import date, datetime
 from difflib import SequenceMatcher
 from models import ExpectedExpense, ReportItem
+
+
+def _parse_date_flexible(date_str: str) -> date:
+    parts = date_str.strip().split("/")
+    month = int(parts[0])
+    day = int(parts[1])
+    if len(parts) == 3 and parts[2]:
+        year = int(parts[2])
+        if year < 100:
+            year += 2000
+    else:
+        year = date.today().year
+    return date(year, month, day)
 
 def parse_expected_expenses(text: str) -> List[ExpectedExpense]:
     """Supports 'MM/DD/YY - Vendor - $Price' and 'MM/DD/YY - $Price - Vendor'."""
@@ -19,8 +32,8 @@ def parse_expected_expenses(text: str) -> List[ExpectedExpense]:
         date_str, part1, part2 = parts
 
         try:
-            expense_date = datetime.strptime(date_str.strip(), "%m/%d/%y").date()
-        except ValueError:
+            expense_date = _parse_date_flexible(date_str)
+        except (ValueError, IndexError):
             continue
 
         if part1.startswith("$"):
