@@ -1,6 +1,7 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
+from fastapi.staticfiles import StaticFiles
 from datetime import datetime
 import sys
 from pathlib import Path
@@ -29,7 +30,7 @@ app = FastAPI(
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173"],
+    allow_origin_regex=r"https://.*\.up\.railway\.app|http://localhost:\d+",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -135,3 +136,8 @@ async def generate_affidavit_endpoint(request: AffidavitRequest):
     except Exception as e:
         import traceback; traceback.print_exc()
         raise HTTPException(status_code=500, detail=f"Affidavit generation failed: {str(e)}")
+
+
+frontend_dist = Path(__file__).parent.parent / "frontend" / "dist"
+if frontend_dist.is_dir():
+    app.mount("/", StaticFiles(directory=str(frontend_dist), html=True), name="frontend")
