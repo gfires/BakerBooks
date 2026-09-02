@@ -23,7 +23,6 @@ export default function AffidavitsModal({ expenses, cardholderName, onClose }: A
         cardholder_name: cardholderName,
       });
 
-      // Trigger download
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;

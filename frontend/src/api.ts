@@ -76,7 +76,6 @@ export async function generateAffidavit(request: AffidavitRequest): Promise<Blob
       const error = await response.json();
       errorMessage = error.detail || errorMessage;
     } catch {
-      // If JSON parsing fails, use status text
       errorMessage = `${errorMessage}: ${response.statusText}`;
     }
     throw new Error(errorMessage);

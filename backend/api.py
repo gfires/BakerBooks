@@ -39,7 +39,6 @@ app.add_middleware(
 
 @app.get("/health")
 async def health():
-    """Health check endpoint"""
     return {"status": "ok"}
 
 
@@ -128,16 +127,21 @@ async def generate_affidavit_endpoint(request: AffidavitRequest):
         )
 
     except ValueError as e:
-        import traceback; traceback.print_exc()
         raise HTTPException(status_code=400, detail=f"Invalid date format: {str(e)}")
     except FileNotFoundError as e:
-        import traceback; traceback.print_exc()
         raise HTTPException(status_code=500, detail=f"Template file not found: {str(e)}")
     except Exception as e:
-        import traceback; traceback.print_exc()
         raise HTTPException(status_code=500, detail=f"Affidavit generation failed: {str(e)}")
 
 
 frontend_dist = Path(__file__).parent.parent / "frontend" / "dist"
+print(f"[startup] Looking for frontend at: {frontend_dist.resolve()}")
+print(f"[startup] frontend/dist exists: {frontend_dist.is_dir()}")
 if frontend_dist.is_dir():
+    print(f"[startup] frontend/dist contents: {list(frontend_dist.iterdir())}")
     app.mount("/", StaticFiles(directory=str(frontend_dist), html=True), name="frontend")
+else:
+    parent = frontend_dist.parent
+    print(f"[startup] frontend/ exists: {parent.is_dir()}")
+    if parent.is_dir():
+        print(f"[startup] frontend/ contents: {list(parent.iterdir())}")

@@ -101,7 +101,7 @@ npm run dev
 
 You should see messages saying the servers are starting. When you see "Local: http://localhost:5173", the app is ready.
 
-#### Step 7: Open the App
+#### Step 8: Open the App
 
 Open your web browser (Chrome, Firefox, Safari, etc.) and go to:
 ```
@@ -110,7 +110,7 @@ http://localhost:5173
 
 The app should now be running!
 
-#### Step 8: Stop the App
+#### Step 9: Stop the App
 
 When you're done using the app:
 - Go back to the terminal window

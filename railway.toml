@@ -1,4 +1,5 @@
 [build]
+builder = "nixpacks"
 nixpacksConfigPath = "nixpacks.toml"
 
 [deploy]

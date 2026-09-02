@@ -108,7 +108,6 @@ export default function ResultsView({ results, cardholderName }: ResultsViewProp
         cardholder_name: cardholderName,
       });
 
-      // Trigger download
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
@@ -123,7 +122,6 @@ export default function ResultsView({ results, cardholderName }: ResultsViewProp
     }
   };
 
-  // Create unique ID for expected expense
   const getExpectedId = (exp: ExpectedExpense, index: number) =>
     `${exp.date}-${exp.vendor}-${exp.price}-${index}`;
 
@@ -131,13 +129,11 @@ export default function ResultsView({ results, cardholderName }: ResultsViewProp
   const getActualId = (actual: ReportItem, index: number) =>
     `${actual.date}-${actual.vendor}-${actual.price}-${index}`;
 
-  // Get index from actual ID
   const getActualIndexFromId = (id: string): number => {
     const parts = id.split('-');
     return parseInt(parts[parts.length - 1]);
   };
 
-  // Check if actual expense is already paired
   const isActualPaired = (actual: ReportItem, index: number): boolean => {
     const actualId = getActualId(actual, index);
     return Array.from(manualPairings.values()).some(
@@ -145,7 +141,6 @@ export default function ResultsView({ results, cardholderName }: ResultsViewProp
     );
   };
 
-  // Get available (unpaired) actual expenses for drag pool
   const availableActuals = results.unmatched_actual
     .map((actual, index) => ({ actual, originalIndex: index }))
     .filter(({ actual, originalIndex }) => !isActualPaired(actual, originalIndex));

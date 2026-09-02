@@ -25,7 +25,6 @@ class ExpectedExpenseSchema(BaseModel):
 
     @classmethod
     def from_dataclass(cls, exp):
-        """Convert ExpectedExpense dataclass to Pydantic model"""
         return cls(
             date=exp.date.isoformat(),
             vendor=exp.vendor,
@@ -45,7 +44,6 @@ class ReportItemSchema(BaseModel):
 
     @classmethod
     def from_dataclass(cls, item):
-        """Convert ReportItem dataclass to Pydantic model"""
         return cls(
             description=item.description,
             activity=item.activity,

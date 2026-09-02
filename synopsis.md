@@ -136,20 +136,22 @@ User fills ExpenseForm
 
 ## Google Sheets Schema (`parser.py`)
 
-Sheet name: `"Purchases 2023-2024"`
+Sheet name: `"Purchases"`
 
 | Column | Field | Notes |
 |---|---|---|
 | A | Timestamp | Used as date filter (>= start_date) |
-| D | Receipts | Comma-separated URLs |
-| F | Budget category | Mapped via `PROGRAM_MAP` → activity code (e.g. "Cab Retreat" → "6100") |
-| I | Price | Parsed with `parse_price()` |
-| J | P-Card holder | Filtered by `cardholder_name` |
-| L | Flyer link | |
-| M | Items purchased | → description |
-| N | Event | |
-| O | Vendor | |
-| P | Needs Affidavit | "No" → `needsAffidavit = True` |
+| B | Name | Purchaser name → description |
+| C | Items purchased | → description |
+| D | Vendor | |
+| E | Event | → description |
+| F | Price | Parsed with `parse_price()` |
+| G | P-Card holder | Filtered by `cardholder_name` |
+| H | Budget category | Mapped via `PROGRAM_MAP` → activity code (e.g. "Cab Retreat" → "6100") |
+| I | Endowment | Appended to description when budget is "Other" |
+| J | Flyer link | |
+| K | Receipts | Comma-separated URLs |
+| L | Needs Affidavit | "No" → `needsAffidavit = True` |
 
 ---
 

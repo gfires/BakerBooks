@@ -6,11 +6,6 @@ import requests
 import tempfile
 import os
 from models import ReportItem
-
-# ----------------------------
-# Program number mapping
-# ----------------------------
-
 PROGRAM_MAP = {
     "Cab Retreat": "6100",
     "Cab Food/Prizes": "6653",
@@ -48,15 +43,7 @@ PROGRAM_MAP = {
     "O-Week": "6000",
 }
 
-
-# ----------------------------
-# Helpers
-# ----------------------------
-
 def export_google_sheet_to_workbook(sheet_url: str):
-    """
-    Converts a public Google Sheet URL to an xlsx workbook via export.
-    """
     spreadsheet_id = sheet_url.split("/d/")[1].split("/")[0]
     export_url = (
         f"https://docs.google.com/spreadsheets/d/"
@@ -94,7 +81,6 @@ def parse_receipts(cell_value) -> List[str]:
     if not cell_value:
         return []
 
-    # Split on commas, strip whitespace, drop empties
     return [
         part.strip()
         for part in str(cell_value).split(",")
@@ -114,28 +100,18 @@ def extract_date(cell_value) -> date:
     return datetime.fromisoformat(s.split(" ")[0]).date()
 
 def parse_price(cell_value) -> float:
-    """
-    Parse price from cell value, handling numeric values with or without decimals.
-    """
     if not cell_value:
         return 0.0
 
-    # Handle numeric types directly
     if isinstance(cell_value, (int, float)):
         return float(cell_value)
 
-    # Handle string values - strip whitespace and dollar signs
     price_str = str(cell_value).strip().replace("$", "").replace(",", "")
 
     try:
         return float(price_str)
     except ValueError:
         return 0.0
-
-
-# ----------------------------
-# Core parser
-# ----------------------------
 
 def parse_purchases(
     spreadsheet_link: str,
@@ -160,7 +136,6 @@ def parse_purchases(
     rows_skipped_wrong_cardholder = 0
     unique_cardholders_seen: set = set()
 
-    # Iterate bottom → top (skip header)
     for row in range(ws.max_row, 1, -1):
         A_timestamp = ws[f"A{row}"].value
         G_pcard = ws[f"G{row}"].value
