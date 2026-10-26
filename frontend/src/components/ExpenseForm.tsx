@@ -85,6 +85,8 @@ export default function ExpenseForm({
               <option value="Allie Meachum (IVP)">Allie Meachum (IVP)</option>
               <option value="Jesse Romero (EVP)">Jesse Romero (EVP)</option>
               <option value="Vero Paz Agreda (CVP)">Vero Paz Agreda (CVP)</option>
+              <option value="Atticus Rothschild (Socials)">Atticus Rothschild (Socials)</option>
+              <option value="Ashley Yang (Socials)">Ashley Yang (Socials)</option>
             </select>
           </div>
 
