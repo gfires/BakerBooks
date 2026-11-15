@@ -11,7 +11,7 @@ router = APIRouter(prefix="/api")
 @router.post("/parse-expenses", response_model=List[ExpectedExpenseSchema])
 async def parse_expenses_endpoint(request: ParseExpensesRequest):
     """
-    Parse free-text expected expenses with the same parser /reconcile uses.
+    Parse free-text expected expenses with the same parser /api/reconcile uses.
 
     Returns only expenses that are valid inputs to /api/generate-affidavit
     (price > 0, non-empty vendor), with ISO dates.

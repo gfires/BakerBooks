@@ -29,28 +29,36 @@ Baker College P-Card holders use this tool to:
 ```
 expense-report-automation/
 ├── synopsis.md                          ← THIS FILE
-├── models.py                            ← Core dataclasses: ReportItem, ExpectedExpense
-├── parser.py                            ← Google Sheets parser + PROGRAM_MAP
-├── reconcile.py                         ← Two-phase matching algorithm
 ├── package.json                         ← Root scripts (npm run dev = backend + frontend concurrently)
-├── requirements.txt                     ← Root Python deps
+├── requirements.txt                     ← Python runtime deps
+├── requirements-dev.txt                 ← + pytest, httpx
+├── tests/                               ← pytest suite (parser, reconcile, pdf, API)
 │
 ├── backend/
-│   ├── api.py                           ← FastAPI app; all HTTP endpoints
-│   ├── models.py                        ← Pydantic request/response schemas (DTOs)
-│   ├── pdf_generator.py                 ← Affidavit PDF generation (ReportLab)
-│   ├── requirements.txt                 ← Backend-specific deps
-│   └── templates/
-│       ├── blank_affidavit.pdf          ← PDF template (text overlaid at runtime)
-│       └── fonts/AguafinaScript-Regular.ttf  ← Cursive font for signature field
+│   ├── main.py                          ← FastAPI app: CORS, routers, /health, static frontend
+│   ├── schemas.py                       ← Pydantic request/response schemas (DTOs)
+│   ├── routes/
+│   │   ├── reconcile.py                 ← POST /api/reconcile
+│   │   ├── expenses.py                  ← POST /api/parse-expenses
+│   │   └── affidavits.py                ← POST /api/generate-affidavit
+│   ├── core/                            ← Framework-free domain logic
+│   │   ├── models.py                    ← Dataclasses: ReportItem, ExpectedExpense
+│   │   ├── dates.py                     ← parse_date_flexible (shared)
+│   │   ├── expense_parser.py            ← Expected-expense text parser (single source of truth)
+│   │   ├── sheet_parser.py              ← Google Sheets parser + PROGRAM_MAP
+│   │   └── reconcile.py                 ← Two-phase matching algorithm
+│   └── pdf/
+│       ├── generator.py                 ← Affidavit PDF generation (ReportLab)
+│       └── templates/
+│           ├── blank_affidavit.pdf      ← PDF template (text overlaid at runtime)
+│           └── fonts/AguafinaScript-Regular.ttf  ← Cursive font for signature field
 │
 └── frontend/
     └── src/
         ├── main.tsx                     ← React entry point
         ├── App.tsx                      ← Root component; owns top-level state
-        ├── api.ts                       ← All fetch calls (reconcile, generate-affidavit, health)
+        ├── api.ts                       ← All fetch calls (reconcile, parse-expenses, generate-affidavit, health)
         ├── types.ts                     ← TypeScript interfaces mirroring backend schemas
-        ├── utils/parseExpenses.ts       ← Frontend parser for expected expense text
         ├── components/
         │   ├── ExpenseForm.tsx          ← Input form (cardholder, date, sheet URL, expense text)
         │   ├── ResultsView.tsx          ← Reconciliation results + drag-and-drop manual matching
@@ -73,7 +81,7 @@ An actual transaction row pulled from the Google Sheet ("Purchases 2023-2024").
 Key fields: `description`, `activity` (budget code), `date`, `price`, `vendor`, `receipts`, `flyer`, `needsAffidavit`.
 
 ### Reconciliation
-Two-phase matching (`reconcile.py`):
+Two-phase matching (`backend/core/reconcile.py`):
 1. **Exact match** — price identical, actual date >= expected date
 2. **Fuzzy match** — price within $1.00 tolerance, vendor name ≥75% similar (SequenceMatcher), actual date >= expected date
 
@@ -85,15 +93,16 @@ Only generated for rows where the sheet column P value is "No" (i.e., `needsAffi
 
 ---
 
-## API Endpoints (`backend/api.py`)
+## API Endpoints (`backend/routes/`)
 
 | Method | Path | Purpose |
 |---|---|---|
-| POST | `/reconcile` | Main flow: parse sheets + match expenses |
+| POST | `/api/reconcile` | Main flow: parse sheets + match expenses |
+| POST | `/api/parse-expenses` | Parse expected-expense text (same parser as reconcile); returns affidavit-valid rows with ISO dates |
 | POST | `/api/generate-affidavit` | Generate and stream affidavit PDF |
 | GET | `/health` | Health check |
 
-### `/reconcile` request shape
+### `/api/reconcile` request shape
 ```json
 {
   "cardholder_name": "Gavin Firestone",
@@ -103,7 +112,7 @@ Only generated for rows where the sheet column P value is "No" (i.e., `needsAffi
 }
 ```
 
-### `/reconcile` response shape
+### `/api/reconcile` response shape
 ```json
 {
   "matched_pairs": [{ "expected": {...}, "actual": {...} }],
@@ -119,9 +128,9 @@ Only generated for rows where the sheet column P value is "No" (i.e., `needsAffi
 ### Reconciliation
 ```
 User fills ExpenseForm
-  → POST /reconcile
-    → parser.py: download sheet via ?format=xlsx export, filter by cardholder + date
-    → reconcile.py: parse expected text, run two-phase match
+  → POST /api/reconcile
+    → core/sheet_parser.py: download sheet via ?format=xlsx export, filter by cardholder + date
+    → core/expense_parser.py + core/reconcile.py: parse expected text, run two-phase match
   → ReconcileResponse returned
 → App.tsx passes to ResultsView
 → User can drag "Extra Actual" cards onto "Missing Expected" drop zones (manual pairing)
@@ -130,11 +139,11 @@ User fills ExpenseForm
 
 ### Affidavit Generation (two paths)
 1. **From ResultsView**: Per matched expense with `needsAffidavit=true` → POST `/api/generate-affidavit`
-2. **From "Generate Affidavits" button**: Parses expense text locally (`parseExpenses.ts`), opens `AffidavitsModal`, downloads each PDF on demand
+2. **From "Generate Affidavits" button**: Parses expense text via POST `/api/parse-expenses`, opens `AffidavitsModal`, downloads each PDF on demand
 
 ---
 
-## Google Sheets Schema (`parser.py`)
+## Google Sheets Schema (`backend/core/sheet_parser.py`)
 
 Sheet name: `"Purchases"`
 
@@ -158,7 +167,7 @@ Sheet name: `"Purchases"`
 ## Frontend State (`App.tsx`)
 
 ```typescript
-results: ReconcileResponse | null   // from /reconcile
+results: ReconcileResponse | null   // from /api/reconcile
 loading: boolean
 error: string | null
 cardholderName: string              // passed to ResultsView for PDF requests
@@ -187,11 +196,11 @@ To add a cardholder, update the `<select>` options in [frontend/src/components/E
 
 ```bash
 npm run dev           # starts both backend (port 8000) and frontend (port 5173) concurrently
-npm run dev:backend   # uvicorn backend/api.py --reload --port 8000
+npm run dev:backend   # uvicorn backend.main:app --reload --port 8000
 npm run dev:frontend  # cd frontend && npm run dev
 ```
 
-Vite proxies `/reconcile`, `/health`, and `/api/*` to `http://localhost:8000`.
+Vite proxies `/health` and `/api/*` to `http://localhost:8000`.
 
 ---
 
@@ -199,12 +208,13 @@ Vite proxies `/reconcile`, `/health`, and `/api/*` to `http://localhost:8000`.
 
 | Task | File(s) |
 |---|---|
-| Add/change API endpoint | [backend/api.py](backend/api.py) |
-| Change matching logic (tolerance, threshold) | [reconcile.py](reconcile.py) |
-| Change sheet parsing / column mapping | [parser.py](parser.py) |
-| Change PDF layout or content | [backend/pdf_generator.py](backend/pdf_generator.py) |
+| Add/change API endpoint | [backend/routes/](backend/routes/) (register in [backend/main.py](backend/main.py)) |
+| Change matching logic (tolerance, threshold) | [backend/core/reconcile.py](backend/core/reconcile.py) (thresholds are passed in [backend/routes/reconcile.py](backend/routes/reconcile.py)) |
+| Change sheet parsing / column mapping | [backend/core/sheet_parser.py](backend/core/sheet_parser.py) |
+| Change PDF layout or content | [backend/pdf/generator.py](backend/pdf/generator.py) |
 | Add a cardholder | [frontend/src/components/ExpenseForm.tsx](frontend/src/components/ExpenseForm.tsx) |
-| Change request/response shape | [backend/models.py](backend/models.py) + [frontend/src/types.ts](frontend/src/types.ts) |
+| Change request/response shape | [backend/schemas.py](backend/schemas.py) + [frontend/src/types.ts](frontend/src/types.ts) |
 | Change drag-and-drop behavior | [frontend/src/components/ResultsView.tsx](frontend/src/components/ResultsView.tsx) |
 | Change affidavit batch modal | [frontend/src/components/AffidavitsModal.tsx](frontend/src/components/AffidavitsModal.tsx) |
-| Core dataclasses (non-HTTP) | [models.py](models.py) |
+| Core dataclasses (non-HTTP) | [backend/core/models.py](backend/core/models.py) |
+| Change expected-expense text format | [backend/core/expense_parser.py](backend/core/expense_parser.py) (frontend uses it via `/api/parse-expenses`) |

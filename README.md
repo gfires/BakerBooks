@@ -78,7 +78,7 @@ You should see `(venv)` appear at the beginning of your terminal prompt.
 Copy and paste these commands one at a time into the terminal (press Enter after each):
 
 ```bash
-python3 -m pip install -r backend/requirements.txt
+python3 -m pip install -r requirements.txt
 ```
 
 Wait for it to finish, then:
@@ -133,7 +133,7 @@ python3 -m venv venv
 source venv/bin/activate  # On Windows: venv\Scripts\activate
 
 # Install dependencies
-pip install -r backend/requirements.txt
+pip install -r requirements.txt
 cd frontend && npm install && cd ..
 npm install
 
@@ -219,7 +219,7 @@ Actual transactions that don't match any expected expense. These appear as dragg
 ### Adjusting Matching Rules
 
 Currently, a "match" is considered either an exact price-match or prices within a dollar and
-a close lexical match between the expected and actual Vendor. If you want to change these thresholds, edit `backend/api.py` to change how strict matching is:
+a close lexical match between the expected and actual Vendor. If you want to change these thresholds, edit `backend/routes/reconcile.py` to change how strict matching is (the matching algorithm itself lives in `backend/core/reconcile.py`):
 ```python
 price_tolerance=1.00       # Max price difference (in dollars)
 similarity_threshold=0.75  # Min vendor name similarity (0-1)
@@ -229,7 +229,7 @@ similarity_threshold=0.75  # Min vendor name similarity (0-1)
 
 **App won't start?**
 - Make sure you ran `npm install` from both the root folder and the frontend folder
-- Make sure you ran `pip install -r backend/requirements.txt`
+- Make sure you ran `pip install -r requirements.txt`
 - Check that ports 8000 and 5173 aren't being used by other programs
 
 **Can't access Google Sheets?**
@@ -314,33 +314,35 @@ git push origin feature/your-feature-name
 ### Project Structure (Abridged)
 
 - `backend/` - FastAPI Python backend
-  - `api.py` - Main API endpoints
-  - `models.py` - Pydantic schemas
-  - `pdf_generator.py` - Affidavit PDF generation
-  - `templates/` - PDF templates and fonts
-    - `blank_affidavit.pdf` - Blank affidavit template
-    - `fonts/` - Custom fonts for PDFs
+  - `main.py` - App setup (CORS, routers, static frontend)
+  - `schemas.py` - Pydantic request/response schemas
+  - `routes/` - HTTP endpoints (`reconcile.py`, `expenses.py`, `affidavits.py`)
+  - `core/` - Framework-free domain logic
+    - `models.py` - Core data models
+    - `dates.py` - Shared flexible date parsing
+    - `expense_parser.py` - Expected-expense text parser (single source of truth; the frontend calls `/api/parse-expenses`)
+    - `sheet_parser.py` - Google Sheets parser
+    - `reconcile.py` - Matching logic
+  - `pdf/` - Affidavit PDF generation
+    - `generator.py` - PDF generator
+    - `templates/` - PDF template and fonts (`blank_affidavit.pdf`, `fonts/`)
+- `tests/` - pytest suite (`pip install -r requirements-dev.txt && pytest`)
 - `frontend/src/` - React TypeScript frontend
   - `components/` - React components
     - `ExpenseForm.tsx` - Main form with two buttons
     - `ResultsView.tsx` - Reconciliation results
     - `AffidavitsModal.tsx` - Modal for generating affidavits
-  - `utils/` - Utility functions
-    - `parseExpenses.ts` - Frontend expense parser
   - `api.ts` - API client
   - `types.ts` - TypeScript interfaces
   - `styles/` - CSS styling
     - `App.css` - Main app styles
     - `Modal.css` - Modal styles
-- `models.py` - Core data models
-- `parser.py` - Google Sheets parser
-- `reconcile.py` - Matching logic
 
 ### Development Tips
 
 **Running backend only:**
 ```bash
-uvicorn backend.api:app --reload --host 0.0.0.0 --port 8000
+uvicorn backend.main:app --reload --host 0.0.0.0 --port 8000
 ```
 
 **Running frontend only:**
