@@ -21,7 +21,7 @@ export async function reconcileExpenses(
   request: ReconcileRequest
 ): Promise<ReconcileResponse> {
   try {
-    const response = await fetch(`${API_BASE_URL}/reconcile`, {
+    const response = await fetch(`${API_BASE_URL}/api/reconcile`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
