@@ -1,4 +1,4 @@
-import type { ReconcileRequest, ReconcileResponse, ApiError } from './types';
+import type { ReconcileRequest, ReconcileResponse, ApiError, ExpectedExpense } from './types';
 
 const API_BASE_URL = '';
 
@@ -54,6 +54,18 @@ export async function checkHealth(): Promise<{ status: string }> {
   return await response.json();
 }
 
+export async function parseExpenses(expectedExpenses: string): Promise<ExpectedExpense[]> {
+  const response = await fetch(`${API_BASE_URL}/api/parse-expenses`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ expected_expenses: expectedExpenses }),
+  });
+  if (!response.ok) {
+    throw new Error(`Failed to parse expenses: ${response.statusText}`);
+  }
+  return await response.json();
+}
+
 export interface AffidavitRequest {
   vendor: string;
   price: number;
@@ -74,7 +86,13 @@ export async function generateAffidavit(request: AffidavitRequest): Promise<Blob
     let errorMessage = 'Failed to generate affidavit';
     try {
       const error = await response.json();
-      errorMessage = error.detail || errorMessage;
+      if (typeof error.detail === 'string') {
+        errorMessage = error.detail;
+      } else if (Array.isArray(error.detail)) {
+        errorMessage = error.detail
+          .map((e: { loc?: unknown[]; msg?: string }) => `${e.loc?.slice(1).join('.')}: ${e.msg}`)
+          .join('; ');
+      }
     } catch {
       errorMessage = `${errorMessage}: ${response.statusText}`;
     }

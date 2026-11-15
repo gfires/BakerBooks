@@ -1,10 +1,10 @@
 import { useState } from 'react';
-import type { ParsedExpense } from '../utils/parseExpenses';
+import type { ExpectedExpense } from '../types';
 import { generateAffidavit } from '../api';
 import '../styles/Modal.css';
 
 interface AffidavitsModalProps {
-  expenses: ParsedExpense[];
+  expenses: ExpectedExpense[];
   cardholderName: string;
   onClose: () => void;
 }
@@ -12,7 +12,7 @@ interface AffidavitsModalProps {
 export default function AffidavitsModal({ expenses, cardholderName, onClose }: AffidavitsModalProps) {
   const [downloading, setDownloading] = useState<Set<number>>(new Set());
 
-  const handleDownload = async (expense: ParsedExpense, index: number) => {
+  const handleDownload = async (expense: ExpectedExpense, index: number) => {
     setDownloading(prev => new Set(prev).add(index));
 
     try {

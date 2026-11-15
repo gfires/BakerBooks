@@ -3,6 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from datetime import datetime
+from typing import List
 import sys
 from pathlib import Path
 import requests
@@ -10,7 +11,7 @@ import requests
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from parser import parse_purchases
-from reconcile import reconcile_expenses
+from reconcile import reconcile_expenses, parse_expected_expenses
 from backend.pdf_generator import generate_affidavit
 
 from backend.models import (
@@ -19,7 +20,8 @@ from backend.models import (
     ExpectedExpenseSchema,
     ReportItemSchema,
     MatchedPair,
-    AffidavitRequest
+    AffidavitRequest,
+    ParseExpensesRequest
 )
 
 app = FastAPI(
@@ -94,6 +96,21 @@ async def reconcile(request: ReconcileRequest):
         raise HTTPException(status_code=502, detail=f"Failed to access Google Sheets: {str(e)}")
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Reconciliation failed: {str(e)}")
+
+
+@app.post("/api/parse-expenses", response_model=List[ExpectedExpenseSchema])
+async def parse_expenses_endpoint(request: ParseExpensesRequest):
+    """
+    Parse free-text expected expenses with the same parser /reconcile uses.
+
+    Returns only expenses that are valid inputs to /api/generate-affidavit
+    (price > 0, non-empty vendor), with ISO dates.
+    """
+    return [
+        ExpectedExpenseSchema.from_dataclass(e)
+        for e in parse_expected_expenses(request.expected_expenses)
+        if e.price > 0 and e.vendor
+    ]
 
 
 @app.post("/api/generate-affidavit")

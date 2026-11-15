@@ -72,3 +72,7 @@ class AffidavitRequest(BaseModel):
     price: float = Field(..., gt=0, description="Price from expected expense")
     date: str = Field(..., pattern=r"^\d{4}-\d{2}-\d{2}$", description="Date in YYYY-MM-DD format")
     cardholder_name: str = Field(..., min_length=1, description="Full cardholder name with role")
+
+
+class ParseExpensesRequest(BaseModel):
+    expected_expenses: str
