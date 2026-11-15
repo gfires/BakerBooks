@@ -4,14 +4,12 @@ from fastapi.responses import StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from datetime import datetime
 from typing import List
-import sys
 from pathlib import Path
 import requests
 
-sys.path.insert(0, str(Path(__file__).parent.parent))
-
-from parser import parse_purchases
-from reconcile import reconcile_expenses, parse_expected_expenses
+from backend.core.sheet_parser import parse_purchases
+from backend.core.reconcile import reconcile_expenses
+from backend.core.expense_parser import parse_expected_expenses
 from backend.pdf_generator import generate_affidavit
 
 from backend.models import (
