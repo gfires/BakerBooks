@@ -10,7 +10,7 @@ import requests
 from backend.core.sheet_parser import parse_purchases
 from backend.core.reconcile import reconcile_expenses
 from backend.core.expense_parser import parse_expected_expenses
-from backend.pdf_generator import generate_affidavit
+from backend.pdf.generator import generate_affidavit
 
 from backend.models import (
     ReconcileRequest,

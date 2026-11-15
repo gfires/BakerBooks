@@ -5,7 +5,7 @@ from backend.core.dates import parse_date_flexible
 from backend.core.expense_parser import parse_expected_expenses
 from backend.core.reconcile import reconcile_expenses, vendor_similarity
 from backend.core.models import ExpectedExpense, ReportItem
-import backend.pdf_generator as pdf_module
+import backend.pdf.generator as pdf_module
 
 RECONCILE_URL = "/reconcile"
 
