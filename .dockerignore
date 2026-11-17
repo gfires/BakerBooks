@@ -5,3 +5,5 @@ frontend/dist
 venv
 .git
 __pycache__
+tests
+.pytest_cache

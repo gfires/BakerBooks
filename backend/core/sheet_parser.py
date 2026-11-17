@@ -5,7 +5,9 @@ from datetime import date, datetime
 import requests
 import tempfile
 import os
-from models import ReportItem
+from backend.core.dates import parse_date_flexible
+from backend.core.models import ReportItem
+
 PROGRAM_MAP = {
     "Cab Retreat": "6100",
     "Cab Food/Prizes": "6653",
@@ -61,21 +63,6 @@ def export_google_sheet_to_workbook(sheet_url: str):
     os.unlink(tmp.name)
     return wb
 
-
-def parse_date_flexible(date_str: str) -> date:
-    """
-    Accepts M/D/YYYY, M/D/YY, or M/D (assumes current year).
-    """
-    parts = date_str.strip().split("/")
-    month = int(parts[0])
-    day = int(parts[1])
-    if len(parts) == 3 and parts[2]:
-        year = int(parts[2])
-        if year < 100:
-            year += 2000
-    else:
-        year = date.today().year
-    return date(year, month, day)
 
 def parse_receipts(cell_value) -> List[str]:
     if not cell_value:

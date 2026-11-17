@@ -1,9 +1,8 @@
 import { useState } from 'react';
 import type { FormEvent } from 'react';
-import { reconcileExpenses } from '../api';
-import type { ReconcileResponse } from '../types';
+import { reconcileExpenses, parseExpenses } from '../api';
+import type { ReconcileResponse, ExpectedExpense } from '../types';
 import AffidavitsModal from './AffidavitsModal';
-import { parseExpectedExpenses, type ParsedExpense } from '../utils/parseExpenses';
 
 interface ExpenseFormProps {
   onSuccess: (response: ReconcileResponse, cardholderName: string) => void;
@@ -21,7 +20,7 @@ export default function ExpenseForm({
   const [sheetLink, setSheetLink] = useState('');
   const [expectedExpenses, setExpectedExpenses] = useState('');
   const [showAffidavitsModal, setShowAffidavitsModal] = useState(false);
-  const [parsedExpenses, setParsedExpenses] = useState<ParsedExpense[]>([]);
+  const [parsedExpenses, setParsedExpenses] = useState<ExpectedExpense[]>([]);
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -46,7 +45,7 @@ export default function ExpenseForm({
     }
   };
 
-  const handleGenerateAffidavits = () => {
+  const handleGenerateAffidavits = async () => {
     // Validate form fields
     if (!cardholderName || !startDate || !sheetLink || !expectedExpenses) {
       onError('Please fill out all fields before generating affidavits');
@@ -54,7 +53,13 @@ export default function ExpenseForm({
     }
 
     // Parse expected expenses
-    const expenses = parseExpectedExpenses(expectedExpenses);
+    let expenses: ExpectedExpense[];
+    try {
+      expenses = await parseExpenses(expectedExpenses);
+    } catch (error) {
+      onError(error instanceof Error ? error.message : 'Failed to parse expenses');
+      return;
+    }
 
     if (expenses.length === 0) {
       onError('No valid expected expenses found. Check your formatting.');

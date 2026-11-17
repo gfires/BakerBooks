@@ -4,7 +4,7 @@
   "description": "Full-stack expense reconciliation application",
   "scripts": {
     "dev": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\"",
-    "dev:backend": "uvicorn backend.api:app --reload --host 0.0.0.0 --port 8000",
+    "dev:backend": "uvicorn backend.main:app --reload --host 0.0.0.0 --port 8000",
     "dev:frontend": "cd frontend && npm run dev",
     "install:all": "cd frontend && npm install"
   },

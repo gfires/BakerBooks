@@ -1,60 +1,8 @@
 from typing import List, Tuple
-from datetime import date, datetime
 from difflib import SequenceMatcher
-from models import ExpectedExpense, ReportItem
+from backend.core.expense_parser import parse_expected_expenses
+from backend.core.models import ExpectedExpense, ReportItem
 
-
-def _parse_date_flexible(date_str: str) -> date:
-    parts = date_str.strip().split("/")
-    month = int(parts[0])
-    day = int(parts[1])
-    if len(parts) == 3 and parts[2]:
-        year = int(parts[2])
-        if year < 100:
-            year += 2000
-    else:
-        year = date.today().year
-    return date(year, month, day)
-
-def parse_expected_expenses(text: str) -> List[ExpectedExpense]:
-    """Supports 'MM/DD/YY - Vendor - $Price' and 'MM/DD/YY - $Price - Vendor'."""
-    expenses = []
-
-    for line in text.strip().split("\n"):
-        line = line.strip()
-        if not line:
-            continue
-
-        parts = [p.strip() for p in line.split("-")]
-        if len(parts) != 3:
-            continue
-
-        date_str, part1, part2 = parts
-
-        try:
-            expense_date = _parse_date_flexible(date_str)
-        except (ValueError, IndexError):
-            continue
-
-        if part1.startswith("$"):
-            price_str = part1
-            vendor = part2
-        else:
-            vendor = part1
-            price_str = part2
-
-        try:
-            price = float(price_str.replace("$", "").replace(",", "").strip())
-        except ValueError:
-            continue
-
-        expenses.append(ExpectedExpense(
-            date=expense_date,
-            vendor=vendor,
-            price=price
-        ))
-
-    return expenses
 
 def vendor_similarity(vendor1: str, vendor2: str) -> float:
     if not vendor1 or not vendor2:
