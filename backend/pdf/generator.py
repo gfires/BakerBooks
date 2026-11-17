@@ -30,8 +30,9 @@ def generate_affidavit(
     cardholder_name: str
 ) -> BytesIO:
 
-    template_pdf = PdfReader(TEMPLATE_PATH)
-    output_pdf = PdfWriter()
+    # Clone the template into the writer so its pages are attached to it
+    # (pypdf >= 7 no longer supports merging into pages of a bare PdfReader).
+    output_pdf = PdfWriter(clone_from=TEMPLATE_PATH)
 
     overlay = BytesIO()
     c = canvas.Canvas(overlay, pagesize=letter)
@@ -55,9 +56,7 @@ def generate_affidavit(
     overlay.seek(0)
     overlay_pdf = PdfReader(overlay)
 
-    page = template_pdf.pages[0]
-    page.merge_page(overlay_pdf.pages[0])
-    output_pdf.add_page(page)
+    output_pdf.pages[0].merge_page(overlay_pdf.pages[0])
 
     output = BytesIO()
     output_pdf.write(output)
